@@ -6,12 +6,8 @@ package edu.uml.jingwen.database;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCursor;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import java.util.Map;
 
 import java.util.List;
-import com.mongodb.util.JSON;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,21 +21,20 @@ public class MongoTrials extends MongoDB{
 
     private String collName;
 
-    public MongoTrials(Property properties){
+    private List<String> tiralsJson;
+
+    public MongoTrials(Property properties, List<String> tiralsJson){
         super(properties.getString("mongo-ip"), properties.getInt("mongo-port"));
         setDatabaseName(properties.getString("database"));
 
         collName = properties.getString("nct-collName");
+
+        this.tiralsJson = tiralsJson;
+
     }
 
     @Override
     public void load(){
-
-    }
-
-
-    @Override
-    public void loadAll(){
         BasicDBObject query = new BasicDBObject();
         BasicDBObject field = new BasicDBObject("id", 1);
 
@@ -58,7 +53,7 @@ public class MongoTrials extends MongoDB{
     }
 
 
-    public void loadAllJSON(List<String> jsonList){
+    public void loadAllJSON(){
         BasicDBObject query = new BasicDBObject();
         BasicDBObject field = new BasicDBObject("id", 1);
 
@@ -69,10 +64,7 @@ public class MongoTrials extends MongoDB{
                 BasicDBObject obj = (BasicDBObject) c.next();
                 String json = obj.toString();
 
-//                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-//                gson.toJson(gson.fromJson(obj.toString(), Map.class));
-
-                jsonList.add(json);
+                tiralsJson.add(json);
 
             }
         }catch (Exception e){

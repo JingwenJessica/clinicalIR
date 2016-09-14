@@ -13,8 +13,6 @@ public interface Database {
 
     public  void load();
 
-    public void loadAll();
-
 
     /**
      * close connection
