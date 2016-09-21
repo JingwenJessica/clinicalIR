@@ -4,75 +4,66 @@ package edu.uml.jingwen.database;
  * Created by jingwen on 9/14/16.
  */
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCursor;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Sorts.*;
+import static com.mongodb.client.model.Projections.*;
 
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
-
 import edu.uml.jingwen.property.Property;
+import org.bson.Document;
 
 
 public class MongoTrials extends MongoDB{
     private static final Logger logger = LogManager.getLogger(MongoTrials.class);
 
     private String collName;
+    private MongoCollection mongoCollection;
+    private List<String> trialsJson;
 
-    private List<String> tiralsJson;
 
-    public MongoTrials(Property properties, List<String> tiralsJson){
+    public MongoTrials(Property properties, List<String> trialsJson){
         super(properties.getString("mongo-ip"), properties.getInt("mongo-port"));
         setDatabaseName(properties.getString("database"));
 
         collName = properties.getString("nct-collName");
+        this.mongoCollection = mongoClient.getDatabase(getDatabaseName()).getCollection(collName);
 
-        this.tiralsJson = tiralsJson;
-
+        this.trialsJson = trialsJson;
     }
 
     @Override
     public void load(){
-        BasicDBObject query = new BasicDBObject();
-        BasicDBObject field = new BasicDBObject("id", 1);
 
-        DBCursor c = mongoClient.getDB(getDatabaseName()).getCollection(collName).find(query,field);
-
-        try {
-            while (c.hasNext()) {
-                BasicDBObject obj = (BasicDBObject) c.next();
-            }
-        }catch (Exception e){
-            System.out.println(e.getMessage());
-            logger.info("MongoException [  " + e.getMessage()  +"]");
-        }finally {
-            logger.info("MongoInfo");
-        }
     }
 
+    public void loadPage(int pid, int num){
 
-    public void loadAllJSON(){
-        BasicDBObject query = new BasicDBObject();
-        BasicDBObject field = new BasicDBObject("id", 1);
-
-        DBCursor c = mongoClient.getDB(getDatabaseName()).getCollection(collName).find(query,field);
+        MongoCursor<Document> cursor = mongoCollection
+                .find(exists("id"))
+                .sort(orderBy(descending("_id")))
+                .projection(exclude("_id"))
+                .iterator();
 
         try {
-            while (c.hasNext()) {
-                BasicDBObject obj = (BasicDBObject) c.next();
-                String json = obj.toString();
-
-                tiralsJson.add(json);
-
+            while (cursor.hasNext()) {
+                String json = cursor.next().toJson();
+                trialsJson.add(json);
             }
-        }catch (Exception e){
+        } catch (Exception e){
             System.out.println(e.getMessage());
             logger.info("MongoException [  " + e.getMessage()  +"]");
-        }finally {
-            logger.info("MongoInfo");
+        } finally {
+            cursor.close();
         }
+
+
+
+
     }
 
 }
