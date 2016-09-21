@@ -11,6 +11,7 @@ import static com.mongodb.client.model.Sorts.*;
 import static com.mongodb.client.model.Projections.*;
 
 import java.util.List;
+import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,17 +24,17 @@ public class MongoTrials extends MongoDB{
 
     private String collName;
     private MongoCollection mongoCollection;
-    private List<String> trialsJson;
+    private Map<String, String> trials;
 
 
-    public MongoTrials(Property properties, List<String> trialsJson){
+    public MongoTrials(Property properties, Map<String, String> trials){
         super(properties.getString("mongo-ip"), properties.getInt("mongo-port"));
         setDatabaseName(properties.getString("database"));
 
         collName = properties.getString("nct-collName");
         this.mongoCollection = mongoClient.getDatabase(getDatabaseName()).getCollection(collName);
 
-        this.trialsJson = trialsJson;
+        this.trials = trials;
     }
 
     @Override
@@ -46,13 +47,16 @@ public class MongoTrials extends MongoDB{
         MongoCursor<Document> cursor = mongoCollection
                 .find(exists("id"))
                 .sort(orderBy(descending("_id")))
+                .skip( (pid-1)*num )
+                .limit(num)
                 .projection(exclude("_id"))
                 .iterator();
 
         try {
             while (cursor.hasNext()) {
-                String json = cursor.next().toJson();
-                trialsJson.add(json);
+                Document doc = cursor.next();
+//                String json = cursor.next().toJson();
+                trials.put( doc.getString("id"), doc.toJson());
             }
         } catch (Exception e){
             System.out.println(e.getMessage());
